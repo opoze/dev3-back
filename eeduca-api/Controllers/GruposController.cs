@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace eeduca_api.Controllers
 {
@@ -15,32 +16,35 @@ namespace eeduca_api.Controllers
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         private Usuario ObterUsuarioDeTestes()
         {
-            Usuario usuario = MySQLContext.ObterInstancia.Usuarios
-                                                         .Where(u => u.Email.Equals("lucas.rtk@hotmail.com"))
-                                                         .FirstOrDefault();
+            SQLServerContext contexto = new SQLServerContext();
+            Usuario usuario = contexto.Usuarios
+                                .Where(u => u.Email == "lucas.rtk@hotmail.com")
+                                .FirstOrDefault();
 
-            if (usuario == null) 
+            if (usuario == null)
             {
-                MySQLContext.ObterInstancia.Usuarios.Add(new Models.Usuario
+                usuario = new Usuario
                 {
                     Email = "lucas.rtk@hotmail.com",
                     Nome = "Lucas Rutkoski",
                     Senha = Convert.FromBase64String("273a0bfec91744347e874922ad05f4380e401937508ebb28") //Senha: 1
-                });
-                MySQLContext.ObterInstancia.SaveChanges();
+                };
+
+                contexto.Usuarios.Add(usuario);
+                contexto.SaveChanges();
             }
 
             return usuario;
         }
 
-        [Route("api/Grupos/CriarGrupo")]
+        [Route("api/Grupos/Novo")]
         [HttpPost]
-        public HttpResponseMessage CriarGrupo(string NomeGrupo)
+        public HttpResponseMessage Novo(string Nome, string Descricao = null)
         {
             HttpResponseMessage retorno = new HttpResponseMessage();
             Grupo NovoGrupo;
 
-            if (String.IsNullOrWhiteSpace(NomeGrupo))
+            if (String.IsNullOrWhiteSpace(Nome))
             {
                 retorno.ReasonPhrase = "O nome do grupo não pode estar em branco!";
                 retorno.StatusCode = HttpStatusCode.BadRequest;
@@ -51,12 +55,15 @@ namespace eeduca_api.Controllers
             {
                 NovoGrupo = new Grupo
                 {
-                    Nome = NomeGrupo,
-                    Administrador = ObterUsuarioDeTestes()
+                    Nome = Nome,
+                    Descricao = Descricao,
+                    UsuarioId = ObterUsuarioDeTestes().Id
                 };
 
-                MySQLContext.ObterInstancia.Grupos.Add(NovoGrupo);
-                MySQLContext.ObterInstancia.SaveChanges();
+                SQLServerContext contexto = new SQLServerContext();
+
+                contexto.Grupos.Add(NovoGrupo);
+                contexto.SaveChanges();
             }
             catch (Exception e)
             {
@@ -73,20 +80,34 @@ namespace eeduca_api.Controllers
             return retorno;
         }
 
-        [Route("api/Grupos/ObterGrupo")]
+        [Route("api/Grupos/Obter")]
         [HttpGet]
-        public Grupo ObterGrupo(int Id)
+        public Grupo Obter(int Id)
         {
-            return MySQLContext.ObterInstancia.Grupos
-                                              .Where(g => g.Id.Equals(Id))
-                                              .FirstOrDefault();
+            return new SQLServerContext().Grupos
+                        .Where(g => g.Id == Id)
+                        .FirstOrDefault();
+        }
+
+        [Route("api/Grupos/Listar")]
+        [HttpGet]
+        public List<Grupo> Listar()
+        {
+            Usuario usuario = ObterUsuarioDeTestes();
+
+            return new SQLServerContext().Grupos
+                        .Where(g => g.UsuarioId == usuario.Id)
+                        .ToList();
         }
 
         [Route("api/Grupos/ObterChaveIngresso")]
         [HttpGet]
         public string ObterChaveIngresso(int Id)
         {
-            Grupo grupo = ObterGrupo(Id);
+            SQLServerContext contexto = new SQLServerContext();
+            Grupo grupo = contexto.Grupos
+                        .Where(g => g.Id == Id)
+                        .FirstOrDefault();
 
             if (grupo == null)
                 return null;
@@ -94,7 +115,7 @@ namespace eeduca_api.Controllers
             if (String.IsNullOrWhiteSpace(grupo.Chave))
             {
                 grupo.GerarChaveIngresso();
-                MySQLContext.ObterInstancia.SaveChanges();
+                contexto.SaveChanges();
             }
 
             return grupo.Chave;
