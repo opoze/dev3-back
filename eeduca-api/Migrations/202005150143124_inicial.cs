@@ -3,7 +3,7 @@
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class Inicial : DbMigration
+    public partial class inicial : DbMigration
     {
         public override void Up()
         {
@@ -13,10 +13,10 @@
                     {
                         Id = c.Int(nullable: false, identity: true),
                         UsuarioId = c.Int(nullable: false),
-                        Nome = c.String(nullable: false, maxLength: 60),
-                        Descricao = c.String(maxLength: 500),
-                        DataHoraCriacao = c.DateTime(nullable: false, null, null, "GetDate()"),
-                        Chave = c.String(maxLength: 6),
+                        Nome = c.String(nullable: false, maxLength: 60, storeType: "nvarchar"),
+                        Descricao = c.String(maxLength: 500, storeType: "nvarchar"),
+                        DataHoraCriacao = c.DateTime(nullable: false, precision: 0, null, "CURRENT_TIMESTAMP"),
+                        Chave = c.String(maxLength: 6, storeType: "nvarchar"),
                     })
                 .PrimaryKey(t => t.Id)
                 .ForeignKey("dbo.Usuarios", t => t.UsuarioId, cascadeDelete: true)
@@ -27,8 +27,8 @@
                 c => new
                     {
                         Id = c.Int(nullable: false, identity: true),
-                        Nome = c.String(nullable: false, maxLength: 60),
-                        Email = c.String(nullable: false, maxLength: 120),
+                        Nome = c.String(nullable: false, maxLength: 60, storeType: "nvarchar"),
+                        Email = c.String(nullable: false, maxLength: 120, storeType: "nvarchar"),
                         Senha = c.Binary(nullable: false),
                     })
                 .PrimaryKey(t => t.Id);

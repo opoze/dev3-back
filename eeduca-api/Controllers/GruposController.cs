@@ -16,7 +16,7 @@ namespace eeduca_api.Controllers
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         private Usuario ObterUsuarioDeTestes()
         {
-            SQLServerContext contexto = new SQLServerContext();
+            MySQLContext contexto = new MySQLContext();
             Usuario usuario = contexto.Usuarios
                                 .Where(u => u.Email == "lucas.rtk@hotmail.com")
                                 .FirstOrDefault();
@@ -60,7 +60,7 @@ namespace eeduca_api.Controllers
                     UsuarioId = ObterUsuarioDeTestes().Id
                 };
 
-                SQLServerContext contexto = new SQLServerContext();
+                MySQLContext contexto = new MySQLContext();
 
                 contexto.Grupos.Add(NovoGrupo);
                 contexto.SaveChanges();
@@ -84,7 +84,7 @@ namespace eeduca_api.Controllers
         [HttpGet]
         public Grupo Obter(int Id)
         {
-            return new SQLServerContext().Grupos
+            return new MySQLContext().Grupos
                         .Where(g => g.Id == Id)
                         .FirstOrDefault();
         }
@@ -95,7 +95,7 @@ namespace eeduca_api.Controllers
         {
             Usuario usuario = ObterUsuarioDeTestes();
 
-            return new SQLServerContext().Grupos
+            return new MySQLContext().Grupos
                         .Where(g => g.UsuarioId == usuario.Id)
                         .ToList();
         }
@@ -104,7 +104,7 @@ namespace eeduca_api.Controllers
         [HttpGet]
         public string ObterChaveIngresso(int Id)
         {
-            SQLServerContext contexto = new SQLServerContext();
+            MySQLContext contexto = new MySQLContext();
             Grupo grupo = contexto.Grupos
                         .Where(g => g.Id == Id)
                         .FirstOrDefault();
