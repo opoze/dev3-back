@@ -9,9 +9,11 @@ namespace eeduca_api.Database
     {
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Grupo> Grupos { get; set; }
+        public DbSet<GrupoMensagem> GrupoMensagens { get; set; }
 
         public MySQLContext() : base("ConexaoMySQL")
         {
+            Configuration.LazyLoadingEnabled = true;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -23,6 +24,9 @@ namespace eeduca_api.Models
         public DateTime DataHoraCriacao { get; set; }
         [MaxLength(6)]
         public string Chave { get; set; }
+
+        [InverseProperty("Grupo")]
+        public virtual List<GrupoMensagem> Mensagens { get; set; }
 
         public void GerarChaveIngresso()
         {

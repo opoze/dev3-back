@@ -19,6 +19,8 @@ namespace eeduca_api.Models
         [Required]
         public byte[] Senha { get; set; }
         [InverseProperty("Administrador")]
-        public List<Grupo> Grupos { get; set; }
+        public virtual List<Grupo>  Grupos { get; set; }
+        [InverseProperty("Usuario")]
+        public virtual List<GrupoMensagem> Mensagens { get; set; }
     }
 }

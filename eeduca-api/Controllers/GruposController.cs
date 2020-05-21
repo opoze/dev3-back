@@ -6,17 +6,18 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Linq;
 using System.Collections.Generic;
+using System.Data.Entity.Validation;
 
 namespace eeduca_api.Controllers
 {
+    [Authorize]
     public class GruposController : ApiController
     {
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //CÓDIGO TEMPORÁRIO!!!! REMOVER NO FUTURO
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        private Usuario ObterUsuarioDeTestes()
+        private Usuario ObterUsuarioDeTestes(MySQLContext contexto)
         {
-            MySQLContext contexto = new MySQLContext();
             Usuario usuario = contexto.Usuarios
                                 .Where(u => u.Email == "lucas.rtk@hotmail.com")
                                 .FirstOrDefault();
@@ -53,14 +54,14 @@ namespace eeduca_api.Controllers
 
             try
             {
+                MySQLContext contexto = new MySQLContext();
+
                 NovoGrupo = new Grupo
                 {
                     Nome = Nome,
                     Descricao = Descricao,
-                    UsuarioId = ObterUsuarioDeTestes().Id
-                };
-
-                MySQLContext contexto = new MySQLContext();
+                    UsuarioId = ObterUsuarioDeTestes(contexto).Id
+                };                
 
                 contexto.Grupos.Add(NovoGrupo);
                 contexto.SaveChanges();
@@ -93,9 +94,10 @@ namespace eeduca_api.Controllers
         [HttpGet]
         public List<Grupo> Listar()
         {
-            Usuario usuario = ObterUsuarioDeTestes();
+            MySQLContext contexto = new MySQLContext();
+            Usuario usuario = ObterUsuarioDeTestes(contexto);
 
-            return new MySQLContext().Grupos
+            return contexto.Grupos
                         .Where(g => g.UsuarioId == usuario.Id)
                         .ToList();
         }
@@ -119,6 +121,67 @@ namespace eeduca_api.Controllers
             }
 
             return grupo.Chave;
+        }
+
+        [Route("api/Grupos/ListarMensagens")]
+        [HttpGet]
+        public List<GrupoMensagem> ListarMensagens(int GrupoId)
+        {
+            return new MySQLContext().GrupoMensagens
+                        .Where(gm => gm.GrupoId == GrupoId)
+                        .OrderBy(gm => gm.DataHoraCriacao)
+                        .ToList();
+        }
+
+        [Route("api/Grupos/PostarMensagem")]
+        [HttpPost]
+        public HttpResponseMessage PostarMensagem(int GrupoId, string Mensagem)
+        {
+            HttpResponseMessage retorno = new HttpResponseMessage();
+            GrupoMensagem NovaMensagem;
+            MySQLContext contexto = new MySQLContext();
+            Usuario usuario = ObterUsuarioDeTestes(contexto);
+            Grupo grupo = contexto.Grupos.FirstOrDefault(g => g.Id == GrupoId);
+
+            if (String.IsNullOrWhiteSpace(Mensagem))
+            {
+                retorno.ReasonPhrase = "Você não pode postar uma mensagem vazia!";
+                retorno.StatusCode = HttpStatusCode.BadRequest;
+                return retorno;
+            }         
+            
+            if (grupo == null)
+            {
+                retorno.ReasonPhrase = "O grupo indicado não foi encontrado!";
+                retorno.StatusCode = HttpStatusCode.BadRequest;
+                return retorno;
+            }
+
+            try
+            {
+                NovaMensagem = new GrupoMensagem
+                {
+                    Usuario = usuario,
+                    Grupo = grupo,
+                    Mensagem = Mensagem
+                };
+
+                contexto.GrupoMensagens.Add(NovaMensagem);
+                contexto.SaveChanges();
+            }
+            catch (Exception e)
+            {
+                while (e.InnerException != null) e = e.InnerException;
+
+                retorno.Content = new StringContent(e.Message + "\n" + e.StackTrace);
+                retorno.StatusCode = HttpStatusCode.InternalServerError;
+                return retorno;
+            }
+
+            retorno.ReasonPhrase = "Mensagem postada com sucesso!";
+            retorno.StatusCode = HttpStatusCode.OK;
+            retorno.Headers.Add("MensagemId", NovaMensagem.Id.ToString());
+            return retorno;
         }
     }
 }
