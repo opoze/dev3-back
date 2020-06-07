@@ -11,33 +11,8 @@ using System.Data.Entity.Validation;
 namespace eeduca_api.Controllers
 {
     [Authorize]
-    public class GruposController : ApiController
+    public class GruposController : BaseController
     {
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //CÓDIGO TEMPORÁRIO!!!! REMOVER NO FUTURO
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        private Usuario ObterUsuarioDeTestes(MySQLContext contexto)
-        {
-            Usuario usuario = contexto.Usuarios
-                                .Where(u => u.Email == "lucas.rtk@hotmail.com")
-                                .FirstOrDefault();
-
-            if (usuario == null)
-            {
-                usuario = new Usuario
-                {
-                    Email = "lucas.rtk@hotmail.com",
-                    Nome = "Lucas Rutkoski",
-                    Senha = Convert.FromBase64String("273a0bfec91744347e874922ad05f4380e401937508ebb28") //Senha: 1
-                };
-
-                contexto.Usuarios.Add(usuario);
-                contexto.SaveChanges();
-            }
-
-            return usuario;
-        }
-
         [Route("api/Grupos/Novo")]
         [HttpPost]
         public HttpResponseMessage Novo(string Nome, string Descricao = null)
@@ -60,7 +35,7 @@ namespace eeduca_api.Controllers
                 {
                     Nome = Nome,
                     Descricao = Descricao,
-                    UsuarioId = ObterUsuarioDeTestes(contexto).Id
+                    UsuarioId = ObterUsuario(RequestContext.Principal.Identity.Name, contexto).Id
                 };                
 
                 contexto.Grupos.Add(NovoGrupo);
@@ -95,7 +70,7 @@ namespace eeduca_api.Controllers
         public List<Grupo> Listar()
         {
             MySQLContext contexto = new MySQLContext();
-            Usuario usuario = ObterUsuarioDeTestes(contexto);
+            Usuario usuario = ObterUsuario(RequestContext.Principal.Identity.Name, contexto);
 
             return contexto.Grupos
                         .Where(g => g.UsuarioId == usuario.Id)
@@ -140,7 +115,7 @@ namespace eeduca_api.Controllers
             HttpResponseMessage retorno = new HttpResponseMessage();
             GrupoMensagem NovaMensagem;
             MySQLContext contexto = new MySQLContext();
-            Usuario usuario = ObterUsuarioDeTestes(contexto);
+            Usuario usuario = ObterUsuario(RequestContext.Principal.Identity.Name, contexto);
             Grupo grupo = contexto.Grupos.FirstOrDefault(g => g.Id == GrupoId);
 
             if (String.IsNullOrWhiteSpace(Mensagem))

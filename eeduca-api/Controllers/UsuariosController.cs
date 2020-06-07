@@ -1,5 +1,7 @@
 ﻿using eeduca_api.Classes;
+using eeduca_api.Database;
 using eeduca_api.Models;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
@@ -7,7 +9,7 @@ using System.Web.Http;
 namespace eeduca_api.Controllers
 {
     [AllowAnonymous]
-    public class UsuariosController : ApiController
+    public class UsuariosController : BaseController
     {
         [Route("api/Usuarios/Login")]
         [HttpPost]        
@@ -37,11 +39,11 @@ namespace eeduca_api.Controllers
         public HttpResponseMessage ValidarToken(string token, string email)
         {
             HttpResponseMessage retorno = new HttpResponseMessage();
+            Usuario usuario = ObterUsuario(email);
 
-            //@Lucas TODO: Implementar a validação no DbSet de usuários
-            if (!true)
+            if (usuario == null)
             {
-                retorno.ReasonPhrase = "O usuário informado não foi encontrado!";
+                retorno.ReasonPhrase = "O e-mail indicado não pertence a nenhum usuário cadastrado!";
                 retorno.StatusCode = HttpStatusCode.BadRequest;
                 return retorno;
             }
@@ -58,6 +60,63 @@ namespace eeduca_api.Controllers
                 retorno.StatusCode = HttpStatusCode.BadRequest;
             }
 
+            return retorno;
+        }
+
+        [Route("api/Usuarios/Registrar")]
+        [HttpPost]
+        public HttpResponseMessage Registrar(UsuarioLogin usuario)
+        {
+            HttpResponseMessage retorno = new HttpResponseMessage();
+            Usuario NovoUsuario;
+
+            if (usuario == null)
+            {
+                retorno.ReasonPhrase = "Você deve informar um usuário e senha para criar o seu usuário!";
+                retorno.StatusCode = HttpStatusCode.BadRequest;
+                return retorno;
+            }
+
+            if (String.IsNullOrWhiteSpace(usuario.Email) || String.IsNullOrWhiteSpace(usuario.Senha))
+            {
+                retorno.ReasonPhrase = "Você deve informar um usuário e senha para criar o seu usuário!";
+                retorno.StatusCode = HttpStatusCode.BadRequest;
+                return retorno;
+            }
+
+            if (ObterUsuario(usuario.Email) != null)
+            {
+                retorno.ReasonPhrase = "Já existe um usuário cadastrado para este e-mail!";
+                retorno.StatusCode = HttpStatusCode.BadRequest;
+                return retorno;
+            }
+
+            try
+            {
+                MySQLContext contexto = new MySQLContext();
+
+                NovoUsuario = new Usuario
+                {
+                    Email = usuario.Email,
+                    Senha = Crypto.CalcularHash(usuario.Senha),
+                    Nome = usuario.Nome
+                };
+
+                contexto.Usuarios.Add(NovoUsuario);
+                contexto.SaveChanges();
+            }
+            catch (Exception e)
+            {
+                while (e.InnerException != null) e = e.InnerException;
+
+                retorno.Content = new StringContent(e.Message + "\n" + e.StackTrace);
+                retorno.StatusCode = HttpStatusCode.InternalServerError;
+                return retorno;
+            }
+
+            retorno.ReasonPhrase = "Usuário criado com sucesso!";
+            retorno.StatusCode = HttpStatusCode.OK;
+            retorno.Headers.Add("UsuarioId", NovoUsuario.Id.ToString());
             return retorno;
         }
     }
