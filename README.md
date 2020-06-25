@@ -15,8 +15,6 @@ Baixe o instalador do site da Microsoft: https://visualstudio.microsoft.com/
 ### Crie o schema para o banco de dados
 No MySQL WorkBench, conecte à sua instância e crie um novo schema chamado eeduca.
 
-### Crie a estrutura de dados no schema
-
 ### Desenvolva!
 O projeto já está se conectando à base de dados no db4free, mas se quiser criar uma base local para testar alguma funcionalidade, precisa modificar a string de conexão no arquivo Web.Config.
 
