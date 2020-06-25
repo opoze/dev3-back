@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -13,6 +14,7 @@ namespace eeduca_api.Models
         public int Id { get; set; }
         public int UsuarioId { get; set; }
         [ForeignKey("UsuarioId")]
+        [JsonIgnore]
         public Usuario Administrador { get; set; }
         [Required]
         [MaxLength(60)]
@@ -26,6 +28,7 @@ namespace eeduca_api.Models
         public string Chave { get; set; }
 
         [InverseProperty("Grupo")]
+        [JsonIgnore]
         public virtual List<GrupoMensagem> Mensagens { get; set; }
 
         public void GerarChaveIngresso()

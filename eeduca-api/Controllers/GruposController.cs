@@ -7,6 +7,8 @@ using System.Web.Http;
 using System.Linq;
 using System.Collections.Generic;
 using System.Data.Entity.Validation;
+using System.Security.Claims;
+using Newtonsoft.Json;
 
 namespace eeduca_api.Controllers
 {
@@ -20,7 +22,7 @@ namespace eeduca_api.Controllers
             HttpResponseMessage retorno = new HttpResponseMessage();
             Grupo NovoGrupo;
 
-            if (String.IsNullOrWhiteSpace(Nome))
+            if (string.IsNullOrWhiteSpace(Nome))
             {
                 retorno.ReasonPhrase = "O nome do grupo não pode estar em branco!";
                 retorno.StatusCode = HttpStatusCode.BadRequest;
@@ -31,11 +33,20 @@ namespace eeduca_api.Controllers
             {
                 MySQLContext contexto = new MySQLContext();
 
+                Usuario usuario = ObterUsuario((ClaimsIdentity)RequestContext.Principal.Identity, contexto);
+                if (usuario == null)
+                {
+                    retorno.StatusCode = HttpStatusCode.Unauthorized;
+                    retorno.Content = new StringContent("Não foi encontrado um usuário com o token informado!");
+
+                    return retorno;
+                }
+
                 NovoGrupo = new Grupo
                 {
                     Nome = Nome,
                     Descricao = Descricao,
-                    UsuarioId = ObterUsuario(RequestContext.Principal.Identity.Name, contexto).Id
+                    UsuarioId = usuario.Id
                 };                
 
                 contexto.Grupos.Add(NovoGrupo);
@@ -67,14 +78,26 @@ namespace eeduca_api.Controllers
 
         [Route("api/Grupos/Listar")]
         [HttpGet]
-        public List<Grupo> Listar()
+        public HttpResponseMessage Listar()
         {
             MySQLContext contexto = new MySQLContext();
-            Usuario usuario = ObterUsuario(RequestContext.Principal.Identity.Name, contexto);
+            Usuario usuario = ObterUsuario((ClaimsIdentity)RequestContext.Principal.Identity, contexto);
+            HttpResponseMessage retorno = new HttpResponseMessage();
 
-            return contexto.Grupos
-                        .Where(g => g.UsuarioId == usuario.Id)
-                        .ToList();
+            if (usuario == null)
+            {
+                retorno.StatusCode = HttpStatusCode.Unauthorized;
+                retorno.Content = new StringContent("Não foi encontrado um usuário com o token informado!");
+                
+                return retorno;
+            }
+
+            retorno.StatusCode = HttpStatusCode.OK;
+            retorno.Content = new StringContent(JsonConvert.SerializeObject(contexto.Grupos
+                                                                                .Where(g => g.UsuarioId == usuario.Id)
+                                                                                .ToList()));
+
+            return retorno;
         }
 
         [Route("api/Grupos/ObterChaveIngresso")]
@@ -115,10 +138,19 @@ namespace eeduca_api.Controllers
             HttpResponseMessage retorno = new HttpResponseMessage();
             GrupoMensagem NovaMensagem;
             MySQLContext contexto = new MySQLContext();
-            Usuario usuario = ObterUsuario(RequestContext.Principal.Identity.Name, contexto);
+
+            Usuario usuario = ObterUsuario((ClaimsIdentity)RequestContext.Principal.Identity, contexto);
+            if (usuario == null)
+            {
+                retorno.StatusCode = HttpStatusCode.Unauthorized;
+                retorno.Content = new StringContent("Não foi encontrado um usuário com o token informado!");
+
+                return retorno;
+            }
+            
             Grupo grupo = contexto.Grupos.FirstOrDefault(g => g.Id == GrupoId);
 
-            if (String.IsNullOrWhiteSpace(Mensagem))
+            if (string.IsNullOrWhiteSpace(Mensagem))
             {
                 retorno.ReasonPhrase = "Você não pode postar uma mensagem vazia!";
                 retorno.StatusCode = HttpStatusCode.BadRequest;
