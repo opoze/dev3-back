@@ -24,7 +24,7 @@ namespace eeduca_api.Controllers
                 return retorno;
             }
 
-            string token = TokenManager.GerarToken(usuario.Email);
+            string token = TokenManager.GerarToken(usuario.Id, usuario.Email);
 
             retorno.ReasonPhrase = "Login efetuado!";
             retorno.StatusCode = HttpStatusCode.OK;

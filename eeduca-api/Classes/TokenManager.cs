@@ -2,6 +2,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System;
 using System.Security.Claims;
+using System.Collections.Generic;
 
 namespace eeduca_api.Classes
 {
@@ -42,11 +43,14 @@ namespace eeduca_api.Classes
             };
         }
 
-        public static string GerarToken(string email)
+        public static string GerarToken(int Id, string email)
         {
             SecurityTokenDescriptor descritor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, email) }),
+                Subject = new ClaimsIdentity(new[] { 
+                    new Claim(ClaimTypes.Name, Id.ToString()),
+                    new Claim(ClaimTypes.Email, email) 
+                }),
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 SigningCredentials = new SigningCredentials(chave, SecurityAlgorithms.HmacSha256Signature),
                 Issuer = emissor
